@@ -13,7 +13,7 @@ import {
 
 // Define the settings interface
 interface FolderListfileSettings {
-  listFileName: string;
+  listFilePattern: string;
   excludeExtensions: string[];
   excludeListFileFromList: boolean;
   includedFolders: string[];
@@ -22,7 +22,7 @@ interface FolderListfileSettings {
 
 // Default settings
 const DEFAULT_SETTINGS: FolderListfileSettings = {
-  listFileName: "folderIndex.md",
+	listFilePattern: "idx-{foldername}.md",
   excludeExtensions: ["css", "js", "json", "toml"],
   excludeListFileFromList: true,
   includedFolders: [],
@@ -49,6 +49,12 @@ export default class FolderListfilePlugin extends Plugin {
     }
   }
 
+	// generate the filename based on folder
+	private getListFileNameForFolder(folderPath: string): string {
+		const folderName = folderPath.split("/").pop() || "root";
+		return this.settings.listFilePattern.replace("{foldername}", folderName);
+	}
+		
   async onload() {
     console.log(`Folder-listfile: loading plugin v${this.manifest.version}`);
     await this.loadSettings();
@@ -69,7 +75,7 @@ export default class FolderListfilePlugin extends Plugin {
     this.registerEvent(
       this.app.vault.on("create", (file: TAbstractFile) => {
         this.log(`registerEvent - create - file: ${file.name}`);
-        if (file instanceof TFile && file.name === this.settings.listFileName) {
+        if (file instanceof TFile && file.name === this.getListFileNameForFolder(file.path)) {
           return;
         }
         this.handleFileChange(file);
@@ -102,7 +108,7 @@ export default class FolderListfilePlugin extends Plugin {
       this.app.vault.on("modify", (file: TAbstractFile) => {
         this.log(`registerEvent - modify - file: ${file.name}`);
         // Skip if this is a list file we just modified to avoid recursive updates
-        if (file instanceof TFile && file.name === this.settings.listFileName) {
+        if (file instanceof TFile && file.name === this.getListFileNameForFolder(file.path)) {
           this.log("Skipping update for list file itself");
           return;
         }
@@ -166,8 +172,16 @@ export default class FolderListfilePlugin extends Plugin {
   }
 
   // Handle file changes (creation, deletion, rename)
-  async handleFileChange(file: TAbstractFile) {
-    // If it's a file, update the listfile in its folder
+	async handleFileChange(file: TAbstractFile) {
+		if (
+				this.settings.excludeListFileFromList &&
+				file.name === this.getListFileNameForFolder(file.path)
+		) {
+				this.log("Skipping update for list file itself");
+				return;
+		}		
+
+		// If it's a file, update the listfile in its folder
     if (file instanceof TFile) {
       const folderPath = this.getFolderPathFromFilePath(file.path);
       this.log(`handleFileChange - TFile folderPath:  ${folderPath}`);
@@ -265,6 +279,8 @@ export default class FolderListfilePlugin extends Plugin {
         return;
       }
 
+			const listFileName = this.getListFileNameForFolder(folderPath);
+
       // Get all files in the folder
       const files = folder.children
         .filter((file) => file instanceof TFile)
@@ -272,7 +288,7 @@ export default class FolderListfilePlugin extends Plugin {
           // Skip the listfile itself if the setting is enabled
           if (
             this.settings.excludeListFileFromList &&
-            file.name === this.settings.listFileName
+            file.name === listFileName
           ) {
             return false;
           }
@@ -304,8 +320,8 @@ export default class FolderListfilePlugin extends Plugin {
       // Create or update the listfile
       this.log(`Updating listfile at: ${folderPath}`);
       const listFilePath = folderPath
-        ? `${folderPath}/${this.settings.listFileName}`
-        : this.settings.listFileName;
+        ? `${folderPath}/${listFileName}`
+        : listFileName;
 
       if (await this.app.vault.adapter.exists(listFilePath)) {
         await this.app.vault.adapter.write(listFilePath, content);
@@ -337,13 +353,14 @@ class FolderListfileSettingTab extends PluginSettingTab {
     containerEl.createEl("h2", { text: "Folder Listfile Settings" });
 
     new Setting(containerEl)
-      .setName("Listfile name")
-      .setDesc("The name of the file that will contain the list of links")
+      .setName("Listfile pattern")
+			.setDesc("The pattern for the filename; use {foldername} to insert folder name.")
       .addText((text) =>
-        text
-          .setValue(this.plugin.settings.listFileName)
+				text
+					.setPlaceholder("idx-{foldername}.md")
+          .setValue(this.plugin.settings.listFilePattern)
           .onChange(async (value) => {
-            this.plugin.settings.listFileName = value;
+            this.plugin.settings.listFilePattern = value;
             await this.plugin.saveSettings();
           })
       );
