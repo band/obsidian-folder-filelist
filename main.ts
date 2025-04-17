@@ -45,7 +45,7 @@ export default class FolderListfilePlugin extends Plugin {
 
   private log(message: string, ...args: unknown[]): void {
     if (this.settings.debug) {
-      console.log(`[Folder-listfile] ${message}`, ...args);
+      console.log(`[Folder-filelist] ${message}`, ...args);
     }
   }
 
@@ -114,8 +114,9 @@ export default class FolderListfilePlugin extends Plugin {
     // Add settings tab
     this.addSettingTab(new FolderListfileSettingTab(this.app, this));
 
-    // on load rebuild the existing indices
+    // on load rebuild the specified indices
     console.log(`onload - includedFolders: ${this.settings.includedFolders}`);
+    this.settings.includedFolders.forEach(item => this.updateListFileForFolder(`${item}/`));
   }
 
   onunload() {
@@ -169,7 +170,7 @@ export default class FolderListfilePlugin extends Plugin {
     // If it's a file, update the listfile in its folder
     if (file instanceof TFile) {
       const folderPath = this.getFolderPathFromFilePath(file.path);
-      console.log(`handleFileChange - TFile folderPath:  ${folderPath}`);
+      this.log(`handleFileChange - TFile folderPath:  ${folderPath}`);
       if (folderPath !== null && this.isFolderIncluded(folderPath)) {
         await this.updateListFileForFolder(folderPath);
       }
@@ -177,7 +178,7 @@ export default class FolderListfilePlugin extends Plugin {
     // If it's a folder, update the parent folder's listfile
     else if (file instanceof TFolder) {
       const folderPath = this.getFolderPathFromFilePath(file.path);
-      console.log(`handleFileChange - TFolder folderPath: ${folderPath}`);
+      this.log(`handleFileChange - TFolder folderPath: ${folderPath}`);
       if (folderPath !== null && this.isFolderIncluded(folderPath)) {
         await this.updateListFileForFolder(folderPath);
       }
@@ -248,7 +249,7 @@ export default class FolderListfilePlugin extends Plugin {
     try {
       // Check if this folder is included in the settings
       if (!this.isFolderIncluded(folderPath)) {
-        console.log(
+        this.log(
           `Skipping folder ${folderPath} - not in included folders list`
         );
         return;
@@ -298,9 +299,7 @@ export default class FolderListfilePlugin extends Plugin {
         content += `- [[${file.basename}]] *(${modDate})*\n`;
       }
 
-      content += `\n*This list contains ${
-        files.length
-      } files and was last updated on ${new Date().toLocaleString()}*`;
+      content += `\n*This list contains ${files.length} ${files.length === 1 ? 'file' : 'files'} and was last updated on ${new Date().toLocaleString()}*`;
 
       // Create or update the listfile
       this.log(`Updating listfile at: ${folderPath}`);
