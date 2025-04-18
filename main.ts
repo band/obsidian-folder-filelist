@@ -56,19 +56,26 @@ export default class FolderListfilePlugin extends Plugin {
 	}
 		
   async onload() {
-    console.log(`Folder-listfile: loading plugin v${this.manifest.version}`);
+    console.log(`Folder-Filelist: loading plugin v${this.manifest.version}`);
     await this.loadSettings();
 
     // Add custom icon
-    addIcon("refresh-folder-list", REFRESH_ICON);
+    addIcon("refresh-folder-listfiles", REFRESH_ICON);
 
     // Add ribbon icon
     this.addRibbonIcon(
-      "refresh-folder-list",
-      "Generate folder listfile",
-      async () => {
-        await this.createListFileForActiveFolder();
-      }
+			"refresh-folder-listfiles",
+			"Generate folder index files",
+			async () => {
+				if (this.settings.includedFolders.length !== 0) {
+						await Promise.all(
+								this.settings.includedFolders.map(item =>
+								this.updateListFileForFolder(`${item}/`)
+								)
+						);
+						new Notice(`Successfully updated list files for ${this.settings.includedFolders.length} folders.`);
+				}
+			}
     );
 
     // Register file events to update listfiles
@@ -275,7 +282,8 @@ export default class FolderListfilePlugin extends Plugin {
   }
 
   // Update or create the listfile for a specific folder
-  async updateListFileForFolder(folderPath: string) {
+	async updateListFileForFolder(folderPath: string) {
+		this.log(`- - - updateListFileForFolder path: ${folderPath}`)
     try {
       // Check if this folder is included in the settings
       if (!this.isFolderIncluded(folderPath)) {
@@ -314,9 +322,33 @@ export default class FolderListfilePlugin extends Plugin {
           return !this.settings.excludeExtensions.includes(extension);
         }) as TFile[];
 
-      // Create content for the listfile
-      const folderName = folderPath.split("/").pop() || "Root";
-      let content = `# Files in ${folderName}\n\n`;
+			// Create content for the listfile
+			let headerContent = '';
+			// get full path to the header file - should be in the current folder
+			const headerFilePath = folderPath ? `${folderPath}/.indexHeading.md` : '.indexHeading.md';
+
+			try {
+				// First check if the file exists
+				const headerFileExists = await this.app.vault.adapter.exists(headerFilePath);
+
+				if (headerFileExists) {
+						headerContent = await this.app.vault.adapter.read(headerFilePath);
+						this.log(`Found and read header file: ${headerFilePath}`);
+				} else {
+						const folderName = folderPath.split("/").pop() || "Root";
+						headerContent = `# Files in ${folderName}  \n\n`;
+						this.log(`Using default header for ${folderName} - header file not found`);
+				}
+			} catch (error) {
+				// Handle any errors that might occur
+				console.error(`Error reading header file: ${error}`);
+				const folderName = folderPath.split("/").pop() || "Root";
+				headerContent = `# Files in ${folderName}  \n\n`;
+				this.log(`Using default header due to error: ${error}`);
+			}
+
+			this.log(`updateListForFileFolder - headerContent: ${headerContent}`);
+			let content = headerContent;
 
       // Sort files by modification time in reverse order (newest first)
       files.sort(
@@ -328,7 +360,7 @@ export default class FolderListfilePlugin extends Plugin {
       // Add links to each file with modification date
       for (const file of files) {
         const modDate = new Date(file.stat.mtime).toLocaleString();
-        content += `- [[${file.basename}]] *(${modDate})*\n`;
+        content += `- [[${file.basename}]] *(${modDate})*  \n`;
       }
 
       content += `\n*This list contains ${files.length} ${files.length === 1 ? 'file' : 'files'} and was last updated on ${new Date().toLocaleString()}*`;
