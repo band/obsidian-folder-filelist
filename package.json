@@ -1,6 +1,6 @@
 {
   "name": "obsidian-folder-listfile",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Obsidian plugin to create and maintain folder listfiles",
   "main": "main.js",
   "scripts": {
