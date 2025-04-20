@@ -22,7 +22,7 @@ interface FolderListfileSettings {
 
 // Default settings
 const DEFAULT_SETTINGS: FolderListfileSettings = {
-	listFilePattern: "ndx-{foldername}.md",
+  listFilePattern: "ndx-{foldername}.md",
   excludeExtensions: ["css", "js", "json", "toml"],
   excludeListFileFromList: true,
   includedFolders: [],
@@ -49,12 +49,12 @@ export default class FolderListfilePlugin extends Plugin {
     }
   }
 
-	// generate the filename based on folder
-	private getListFileNameForFolder(folderPath: string): string {
-		const folderName = folderPath.split("/").pop() || "root";
-		return this.settings.listFilePattern.replace("{foldername}", folderName);
-	}
-		
+  // generate the filename based on folder
+  private getListFileNameForFolder(folderPath: string): string {
+    const folderName = folderPath.split("/").pop() || "root";
+    return this.settings.listFilePattern.replace("{foldername}", folderName);
+  }
+
   async onload() {
     console.log(`Folder-Filelist: loading plugin v${this.manifest.version}`);
     await this.loadSettings();
@@ -64,25 +64,30 @@ export default class FolderListfilePlugin extends Plugin {
 
     // Add ribbon icon
     this.addRibbonIcon(
-			"refresh-folder-listfiles",
-			"Generate folder index files",
-			async () => {
-				if (this.settings.includedFolders.length !== 0) {
-						await Promise.all(
-								this.settings.includedFolders.map(item =>
-								this.updateListFileForFolder(`${item}/`)
-								)
-						);
-						new Notice(`Successfully updated list files for ${this.settings.includedFolders.length} folders.`);
-				}
-			}
+      "refresh-folder-listfiles",
+      "Generate folder index files",
+      async () => {
+        if (this.settings.includedFolders.length !== 0) {
+          await Promise.all(
+            this.settings.includedFolders.map((item) =>
+              this.updateListFileForFolder(`${item}/`)
+            )
+          );
+          new Notice(
+            `Successfully updated list files for ${this.settings.includedFolders.length} folders.`
+          );
+        }
+      }
     );
 
     // Register file events to update listfiles
     this.registerEvent(
       this.app.vault.on("create", (file: TAbstractFile) => {
         this.log(`registerEvent - create - file: ${file.name}`);
-        if (file instanceof TFile && file.name === this.getListFileNameForFolder(file.path)) {
+        if (
+          file instanceof TFile &&
+          file.name === this.getListFileNameForFolder(file.path)
+        ) {
           return;
         }
         this.handleFileChange(file);
@@ -113,9 +118,9 @@ export default class FolderListfilePlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on("modify", (file: TAbstractFile) => {
-				this.log(`registerEvent - modify - filePath: ${file.path}`);
+        this.log(`registerEvent - modify - filePath: ${file.path}`);
         // Skip if this is a list file just modified to avoid recursive updates
-				if (file instanceof TFile && file.name.startsWith('ndx-')) {
+        if (file instanceof TFile && file.name.startsWith("ndx-")) {
           this.log("Skipping update for list file itself");
           return;
         }
@@ -129,11 +134,15 @@ export default class FolderListfilePlugin extends Plugin {
 
     // on load rebuild the specified indices
     console.log(`onload - includedFolders: ${this.settings.includedFolders}`);
-    this.settings.includedFolders.forEach(item => this.updateListFileForFolder(`${item}/`));
+    this.settings.includedFolders.forEach((item) =>
+      this.updateListFileForFolder(`${item}/`)
+    );
   }
 
   onunload() {
     // Clean up when plugin is disabled
+    // Clear all debounce timers
+    Object.values(this.debounceTimers).forEach((timer) => clearTimeout(timer));
   }
 
   async loadSettings() {
@@ -179,10 +188,10 @@ export default class FolderListfilePlugin extends Plugin {
   }
 
   // Handle file changes (creation, deletion, rename)
-	async handleFileChange(file: TAbstractFile) {
-		let folderPath: string | null = null;
+  async handleFileChange(file: TAbstractFile) {
+    let folderPath: string | null = null;
 
-		// If a file, update the listfile in its folder
+    // If a file, update the listfile in its folder
     if (file instanceof TFile) {
       folderPath = this.getFolderPathFromFilePath(file.path);
       this.log(`handleFileChange - TFile folderPath:  ${folderPath}`);
@@ -193,23 +202,23 @@ export default class FolderListfilePlugin extends Plugin {
       this.log(`handleFileChange - TFolder folderPath: ${folderPath}`);
     }
 
-		if (folderPath === null) {
-				return
-		}
-		//
-		if (!this.isFolderIncluded(folderPath)) {
-			this.log(`Skipping folder ${folderPath} - not in includedFolders list`)
-		}
-		// is this a included folder?
-		if (file instanceof TFile) {
-			const listFileName = this.getListFileNameForFolder(folderPath)
-			if (this.settings.excludeListFileFromList && file.name === listFileName) {
-				this.log("skip update for list file itself")
-					return
-			}
-		}
-			// now update the listfile for this folder
-		await this.updateListFileForFolder(folderPath)
+    if (folderPath === null) {
+      return;
+    }
+    //
+    if (!this.isFolderIncluded(folderPath)) {
+      this.log(`Skipping folder ${folderPath} - not in includedFolders list`);
+    }
+    // is this a included folder?
+    if (file instanceof TFile) {
+      const listFileName = this.getListFileNameForFolder(folderPath);
+      if (this.settings.excludeListFileFromList && file.name === listFileName) {
+        this.log("skip update for list file itself");
+        return;
+      }
+    }
+    // now update the listfile for this folder
+    await this.updateListFileForFolder(folderPath);
   }
 
   async handleFileModification(file: TAbstractFile) {
@@ -223,37 +232,36 @@ export default class FolderListfilePlugin extends Plugin {
     this.log(
       `handleFileModification - file: ${file.path}, folderPath: ${folderPath}`
     );
-		if (folderPath === null) {
-				return
-		}
-			if (!this.isFolderIncluded(folderPath)) {
-					this.log(`Skipping folder ${folderPath} - not in includedFolders list`)
-			}
+    if (folderPath === null) {
+      return;
+    }
+    if (!this.isFolderIncluded(folderPath)) {
+      this.log(`Skipping folder ${folderPath} - not in includedFolders list`);
+    }
 
-			const listFileName = this.getListFileNameForFolder(folderPath)
-			if (this.settings.excludeListFileFromList && file.name === listFileName) {
-					this.log("Skip update for list file itself")
-			}
+    const listFileName = this.getListFileNameForFolder(folderPath);
+    if (this.settings.excludeListFileFromList && file.name === listFileName) {
+      this.log("Skip update for list file itself");
+    }
 
-      // Implement debouncing to prevent excessive updates
-      if (this.debounceTimers?.[folderPath]) {
-        clearTimeout(this.debounceTimers[folderPath]);
-        this.log(`Cleared existing debounce timer for ${folderPath}`);
-      }
+    // Implement debouncing to prevent excessive updates
+    if (this.debounceTimers?.[folderPath]) {
+      clearTimeout(this.debounceTimers[folderPath]);
+      this.log(`Cleared existing debounce timer for ${folderPath}`);
+    }
 
-      // Initialize debounceTimers if it doesn't exist
-      if (!this.debounceTimers) {
-        this.debounceTimers = {};
-      }
+    // Initialize debounceTimers if it doesn't exist
+    if (!this.debounceTimers) {
+      this.debounceTimers = {};
+    }
 
-      // Set a new timer
-      this.log(`Setting debounce timer for ${folderPath}`);
-      this.debounceTimers[folderPath] = setTimeout(() => {
-        this.log(`Debounce timer fired for ${folderPath}, updating list file`);
-        this.updateListFileForFolder(folderPath);
-        delete this.debounceTimers[folderPath];
-      }, 3000); // 3-second debounce
-
+    // Set a new timer
+    this.log(`Setting debounce timer for ${folderPath}`);
+    this.debounceTimers[folderPath] = setTimeout(() => {
+      this.log(`Debounce timer fired for ${folderPath}, updating list file`);
+      this.updateListFileForFolder(folderPath);
+      delete this.debounceTimers[folderPath];
+    }, 3000); // 3-second debounce
   }
 
   // Create a listfile for the active folder
@@ -282,8 +290,7 @@ export default class FolderListfilePlugin extends Plugin {
   }
 
   // Update or create the listfile for a specific folder
-	async updateListFileForFolder(folderPath: string) {
-		this.log(`- - - updateListFileForFolder path: ${folderPath}`)
+  async updateListFileForFolder(folderPath: string) {
     try {
       // Check if this folder is included in the settings
       if (!this.isFolderIncluded(folderPath)) {
@@ -303,7 +310,7 @@ export default class FolderListfilePlugin extends Plugin {
         return;
       }
 
-			const listFileName = this.getListFileNameForFolder(folderPath);
+      const listFileName = this.getListFileNameForFolder(folderPath);
 
       // Get all files in the folder
       const files = folder.children
@@ -322,33 +329,9 @@ export default class FolderListfilePlugin extends Plugin {
           return !this.settings.excludeExtensions.includes(extension);
         }) as TFile[];
 
-			// Create content for the listfile
-			let headerContent = '';
-			// get full path to the header file - should be in the current folder
-			const headerFilePath = folderPath ? `${folderPath}/.indexHeading.md` : '.indexHeading.md';
-
-			try {
-				// First check if the file exists
-				const headerFileExists = await this.app.vault.adapter.exists(headerFilePath);
-
-				if (headerFileExists) {
-						headerContent = await this.app.vault.adapter.read(headerFilePath);
-						this.log(`Found and read header file: ${headerFilePath}`);
-				} else {
-						const folderName = folderPath.split("/").pop() || "Root";
-						headerContent = `# Files in ${folderName}  \n\n`;
-						this.log(`Using default header for ${folderName} - header file not found`);
-				}
-			} catch (error) {
-				// Handle any errors that might occur
-				console.error(`Error reading header file: ${error}`);
-				const folderName = folderPath.split("/").pop() || "Root";
-				headerContent = `# Files in ${folderName}  \n\n`;
-				this.log(`Using default header due to error: ${error}`);
-			}
-
-			this.log(`updateListForFileFolder - headerContent: ${headerContent}`);
-			let content = headerContent;
+      // Create content for the listfile
+      const folderName = folderPath.split("/").pop() || "Root";
+      let content = `# Files in ${folderName}\n\n`;
 
       // Sort files by modification time in reverse order (newest first)
       files.sort(
@@ -360,10 +343,12 @@ export default class FolderListfilePlugin extends Plugin {
       // Add links to each file with modification date
       for (const file of files) {
         const modDate = new Date(file.stat.mtime).toLocaleString();
-        content += `- [[${file.basename}]] *(${modDate})*  \n`;
+        content += `- [[${file.basename}]] *(${modDate})*\n`;
       }
 
-      content += `\n*This list contains ${files.length} ${files.length === 1 ? 'file' : 'files'} and was last updated on ${new Date().toLocaleString()}*`;
+      content += `\n*This list contains ${files.length} ${
+        files.length === 1 ? "file" : "files"
+      } and was last updated on ${new Date().toLocaleString()}*`;
 
       // Create or update the listfile
       this.log(`Updating listfile at: ${folderPath}`);
@@ -402,10 +387,12 @@ class FolderListfileSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Listfile pattern")
-			.setDesc("The pattern for the filename; use {foldername} to insert folder name.")
+      .setDesc(
+        "The pattern for the filename; use {foldername} to insert folder name."
+      )
       .addText((text) =>
-				text
-					.setPlaceholder("ndx-{foldername}.md")
+        text
+          .setPlaceholder("ndx-{foldername}.md")
           .setValue(this.plugin.settings.listFilePattern)
           .onChange(async (value) => {
             this.plugin.settings.listFilePattern = value;
