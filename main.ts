@@ -70,7 +70,7 @@ export default class FolderListfilePlugin extends Plugin {
         if (this.settings.includedFolders.length !== 0) {
           await Promise.all(
             this.settings.includedFolders.map((item) =>
-              this.updateListFileForFolder(`${item}/`)
+              this.updateListFileForFolder(`${item}`)
             )
           );
           new Notice(
@@ -133,7 +133,7 @@ export default class FolderListfilePlugin extends Plugin {
     this.addSettingTab(new FolderListfileSettingTab(this.app, this));
 
     // on load rebuild the specified indices
-    console.log(`onload - includedFolders: ${this.settings.includedFolders}`);
+    this.log(`onload - includedFolders: ${this.settings.includedFolders}`);
     this.settings.includedFolders.forEach((item) =>
       this.updateListFileForFolder(`${item}/`)
     );
@@ -444,7 +444,6 @@ class FolderListfileSettingTab extends PluginSettingTab {
             .map((item) => {
               return item.endsWith("/") ? item.slice(0, -1) : item;
             });
-          // console.log(' -- ',this.plugin.settings.includedFolders);
           await this.plugin.saveSettings();
         };
       });
