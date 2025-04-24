@@ -74,10 +74,10 @@ this.debounceTimers?.[folderPath]
 • Move helper functions to a separate utilities file
 
 ## Recommendations
-1. Implement onunload() to clear all timers
+1. Implement onunload() to clear all timers - DONE
 2. Add input validation for settings
 3. Standardize null/undefined checks
-4. Fix indentation and code style issues
+4. Fix indentation and code style issues - DONE
 5. Add error handling for file operations
 6. Consider adding a user-configurable debounce delay
 7. Add confirmation for operations that might affect many files
