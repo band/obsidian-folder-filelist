@@ -209,11 +209,10 @@ export default class FolderListfilePlugin extends Plugin {
     if (!this.isFolderIncluded(folderPath)) {
       this.log(`Skipping folder ${folderPath} - not in includedFolders list`);
     }
-    // is this a included folder?
+    // is this an included folder?
     if (file instanceof TFile) {
       const listFileName = this.getListFileNameForFolder(folderPath);
       if (this.settings.excludeListFileFromList && file.name === listFileName) {
-        this.log("skip update for list file itself");
         return;
       }
     }
@@ -226,7 +225,6 @@ export default class FolderListfilePlugin extends Plugin {
     if (!(file instanceof TFile)) {
       return;
     }
-
     // Get the folder containing this file
     const folderPath = this.getFolderPathFromFilePath(file.path);
     this.log(
@@ -236,12 +234,14 @@ export default class FolderListfilePlugin extends Plugin {
       return;
     }
     if (!this.isFolderIncluded(folderPath)) {
-      this.log(`Skipping folder ${folderPath} - not in includedFolders list`);
+			this.log(`Skipping folder ${folderPath} - not in includedFolders list`);
+			return;
     }
 
     const listFileName = this.getListFileNameForFolder(folderPath);
     if (this.settings.excludeListFileFromList && file.name === listFileName) {
-      this.log("Skip update for list file itself");
+			this.log("Skip update for list file itself");
+			return;
     }
 
     // Implement debouncing to prevent excessive updates
@@ -258,7 +258,7 @@ export default class FolderListfilePlugin extends Plugin {
     // Set a new timer
     this.log(`Setting debounce timer for ${folderPath}`);
     this.debounceTimers[folderPath] = setTimeout(() => {
-      this.log(`Debounce timer fired for ${folderPath}, updating list file`);
+//      this.log(`Debounce timer fired for ${folderPath}, updating list file`);
       this.updateListFileForFolder(folderPath);
       delete this.debounceTimers[folderPath];
     }, 3000); // 3-second debounce
@@ -432,7 +432,7 @@ class FolderListfileSettingTab extends PluginSettingTab {
       .addTextArea((textArea) => {
         textArea.inputEl.setAttr("rows", 6);
         textArea
-          .setPlaceholder("daily\nprojects/active\nnotes/reference")
+          .setPlaceholder("dailyNotes\nprojects/active\nnotes/references")
           .setValue(this.plugin.settings.includedFolders.join("\n"));
 
         textArea.inputEl.onblur = async (e: FocusEvent) => {
