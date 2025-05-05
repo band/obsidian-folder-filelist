@@ -422,7 +422,7 @@ class FolderListfileSettingTab extends PluginSettingTab {
       "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#writing_a_regular_expression_pattern";
     link.text = "MDN - Regular expressions";
     fragment.append(
-      "Folder paths to generate indices for. One folder path per line."
+      "Folder paths for which to generate file lists. One folder path per line."
     );
     fragment.append(" Leave empty to disable auto-generation.");
 
@@ -460,19 +460,6 @@ class FolderListfileSettingTab extends PluginSettingTab {
             this.plugin.settings.excludeListFileFromList = value;
             await this.plugin.saveSettings();
           })
-      );
-
-    // Add debug toggle
-    new Setting(containerEl)
-      .setName("Enable debug mode")
-      .setDesc(
-        "When enabled, detailed logs are printed to the developer console"
-      )
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.debug).onChange(async (value) => {
-          this.plugin.settings.debug = value;
-          await this.plugin.saveSettings();
-        })
       );
   }
 }
