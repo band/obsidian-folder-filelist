@@ -134,15 +134,17 @@ export default class FolderListfilePlugin extends Plugin {
 
     // on load rebuild the specified indices
     this.log(`onload - includedFolders: ${this.settings.includedFolders}`);
-    this.settings.includedFolders.forEach((item) =>
-      this.updateListFileForFolder(`${item}/`)
-    );
+    for (const item of this.settings.includedFolders) {
+      this.updateListFileForFolder(`${item}/`);
+    }
   }
 
   onunload() {
     // Clean up when plugin is disabled
     // Clear all debounce timers
-    Object.values(this.debounceTimers).forEach((timer) => clearTimeout(timer));
+    for (const timer of Object.values(this.debounceTimers)) {
+      clearTimeout(timer);
+    }
   }
 
   async loadSettings() {
@@ -234,14 +236,14 @@ export default class FolderListfilePlugin extends Plugin {
       return;
     }
     if (!this.isFolderIncluded(folderPath)) {
-			this.log(`Skipping folder ${folderPath} - not in includedFolders list`);
-			return;
+      this.log(`Skipping folder ${folderPath} - not in includedFolders list`);
+      return;
     }
 
     const listFileName = this.getListFileNameForFolder(folderPath);
     if (this.settings.excludeListFileFromList && file.name === listFileName) {
-			this.log("Skip update for list file itself");
-			return;
+      this.log("Skip update for list file itself");
+      return;
     }
 
     // Implement debouncing to prevent excessive updates
@@ -258,7 +260,7 @@ export default class FolderListfilePlugin extends Plugin {
     // Set a new timer
     this.log(`Setting debounce timer for ${folderPath}`);
     this.debounceTimers[folderPath] = setTimeout(() => {
-//      this.log(`Debounce timer fired for ${folderPath}, updating list file`);
+      //      this.log(`Debounce timer fired for ${folderPath}, updating list file`);
       this.updateListFileForFolder(folderPath);
       delete this.debounceTimers[folderPath];
     }, 3000); // 3-second debounce
@@ -325,25 +327,35 @@ export default class FolderListfilePlugin extends Plugin {
           }
 
           // Skip files with excluded extensions
-          const extension = (file as TFile).extension.toLowerCase();
-          return !this.settings.excludeExtensions.includes(extension);
-        }) as TFile[];
+          if (file instanceof TFile) {
+            const extension = (file as TFile).extension.toLowerCase();
+            return !this.settings.excludeExtensions.includes(extension);
+          }
+
+          return false;
+        });
 
       // Create content for the listfile
       const folderName = folderPath.split("/").pop() || "Root";
       let content = `# Files in ${folderName}\n\n`;
 
       // Sort files by modification time in reverse order (newest first)
-      files.sort(
-        (a, b) =>
-          (this.app.vault.getAbstractFileByPath(b.path) as TFile)?.stat.mtime -
-          (this.app.vault.getAbstractFileByPath(a.path) as TFile)?.stat.mtime
-      );
+      files.sort((a, b) => {
+        const fileA = this.app.vault.getAbstractFileByPath(a.path);
+        const fileB = this.app.vault.getAbstractFileByPath(b.path);
+
+        if (fileA instanceof TFile && fileB instanceof TFile) {
+          return fileB.stat.mtime - fileA.stat.mtime;
+        }
+        return 0; // Default return value if conditions are not met
+      });
 
       // Add links to each file with modification date
       for (const file of files) {
-        const modDate = new Date(file.stat.mtime).toLocaleString();
-        content += `- [[${file.basename}]] *(${modDate})*\n`;
+        if (file instanceof TFile) {
+          const modDate = new Date(file.stat.mtime).toLocaleString();
+          content += `- [[${file.basename}]] *(${modDate})*\n`;
+        }
       }
 
       content += `\n*This list contains ${files.length} ${
