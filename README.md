@@ -1,7 +1,6 @@
 # Simple Folder Filelist for Obsidian  
 
-![Latest Version](https://img.shields.io/github/v/release/turulix/obsidian-folder-index?sort=semver)
-![Build Status](https://img.shields.io/github/actions/workflow/status/turulix/obsidian-folder-index/release.yml)
+![Latest Version](https://img.shields.io/github/v/release/band/obsidian-folder-filelist?sort=semver)
 
 
 Generate a file in specified folders containing wiki-links to files in that folder.  
