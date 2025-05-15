@@ -327,12 +327,8 @@ export default class FolderListfilePlugin extends Plugin {
           }
 
           // Skip files with excluded extensions
-          if (file instanceof TFile) {
-            const extension = (file as TFile).extension.toLowerCase();
-            return !this.settings.excludeExtensions.includes(extension);
-          }
-
-          return false;
+          const extension = (file as TFile).extension.toLowerCase();
+          return !this.settings.excludeExtensions.includes(extension);
         });
 
       // Create content for the listfile
