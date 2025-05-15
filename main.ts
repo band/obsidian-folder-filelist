@@ -14,7 +14,7 @@ import {
 // Define the settings interface
 interface FolderListfileSettings {
   listFilePattern: string;
-  excludeExtensions: string[];
+  excludedExtensions: string[];
   excludeListFileFromList: boolean;
   includedFolders: string[];
   debug: boolean;
@@ -23,7 +23,7 @@ interface FolderListfileSettings {
 // Default settings
 const DEFAULT_SETTINGS: FolderListfileSettings = {
   listFilePattern: "ndx-{foldername}.md",
-  excludeExtensions: ["css", "js", "json", "toml"],
+  excludedExtensions: ["css", "js", "json", "toml"],
   excludeListFileFromList: true,
   includedFolders: [],
   debug: false,
@@ -328,7 +328,7 @@ export default class FolderListfilePlugin extends Plugin {
 
           // Skip files with excluded extensions
           const extension = (file as TFile).extension.toLowerCase();
-          return !this.settings.excludeExtensions.includes(extension);
+          return !this.settings.excludedExtensions.includes(extension);
         });
 
       // Create content for the listfile
@@ -415,9 +415,9 @@ class FolderListfileSettingTab extends PluginSettingTab {
       )
       .addText((text) =>
         text
-          .setValue(this.plugin.settings.excludeExtensions.join(", "))
+          .setValue(this.plugin.settings.excludedExtensions.join(", "))
           .onChange(async (value) => {
-            this.plugin.settings.excludeExtensions = value
+            this.plugin.settings.excludedExtensions = value
               .split(",")
               .map((ext) => ext.trim().toLowerCase());
             await this.plugin.saveSettings();
