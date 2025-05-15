@@ -16,7 +16,8 @@ interface FolderListfileSettings {
   listFilePattern: string;
   excludedExtensions: string[];
   excludeListFileFromList: boolean;
-  includedFolders: string[];
+	includedFolders: string[];
+	excludedFilenames: string[];
   debug: boolean;
 }
 
@@ -25,7 +26,8 @@ const DEFAULT_SETTINGS: FolderListfileSettings = {
   listFilePattern: "ndx-{foldername}.md",
   excludedExtensions: ["css", "js", "json", "toml"],
   excludeListFileFromList: true,
-  includedFolders: [],
+	includedFolders: [],
+	excludedFilenames: ["LICENSE"],
   debug: false,
 };
 
@@ -326,6 +328,11 @@ export default class FolderListfilePlugin extends Plugin {
             return false;
           }
 
+					// Skip excludedFilenames
+					if (this.settings.excludedFilenames.includes(file.name)) {
+						return false;
+					}
+
           // Skip files with excluded extensions
           const extension = (file as TFile).extension.toLowerCase();
           return !this.settings.excludedExtensions.includes(extension);
@@ -446,6 +453,28 @@ class FolderListfileSettingTab extends PluginSettingTab {
         textArea.inputEl.onblur = async (e: FocusEvent) => {
           const paths = (e.target as HTMLInputElement).value;
           this.plugin.settings.includedFolders = paths
+            .split("\n")
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0)
+            .map((item) => {
+              return item.endsWith("/") ? item.slice(0, -1) : item;
+            });
+          await this.plugin.saveSettings();
+        };
+      });
+
+    new Setting(containerEl)
+      .setName("Excluded filenames")
+      .setDesc(fragment)
+      .addTextArea((textArea) => {
+        textArea.inputEl.setAttr("rows", 6);
+        textArea
+          .setPlaceholder("LICENSE\n")
+          .setValue(this.plugin.settings.excludedFilenames.join("\n"));
+
+        textArea.inputEl.onblur = async (e: FocusEvent) => {
+          const paths = (e.target as HTMLInputElement).value;
+          this.plugin.settings.excludedFilenames = paths
             .split("\n")
             .map((item) => item.trim())
             .filter((item) => item.length > 0)
