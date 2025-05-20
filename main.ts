@@ -367,12 +367,11 @@ export default class FolderListfilePlugin extends Plugin {
 
       // Create or update the listfile
 			this.log(`Updating listfile for: ${folderPath}`);
-			const listFilePath = `_ndxfiles/${listFileName}`;
-/*
-      const listFilePath = folderPath
+
+			const listFilePath = folderPath
         ? `${folderPath}/${listFileName}`
         : listFileName;
-*/
+
       if (await this.app.vault.adapter.exists(listFilePath)) {
         await this.app.vault.adapter.write(listFilePath, content);
       } else {
