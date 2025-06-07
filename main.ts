@@ -391,8 +391,6 @@ class FolderListfileSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Folder Listfile Settings" });
-
     new Setting(containerEl)
       .setName("Listfile pattern")
       .setDesc(
