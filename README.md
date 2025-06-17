@@ -20,9 +20,11 @@ Generate a file in specified folders containing wiki-links to files in that fold
   - Specify “Included folder paths”: folders for which you want filelist files  
 	  - A folder path of “/“ generates an `ndx-root.md` file of the vault root directory  
 
-
-  - Specify “Excluded extensions”: file extensions to exclude from folder filelists  
+  - Specify “Excluded extensions”: file extensions to exclude from
+  folder filelists  
   
-  - Adjust Listfile pattern: default pattern recommended
+  - Specify "Excluded files": filenames to exclude from folder filelists; e.g., `LICENSE`  
+  
+  - Adjust Listfile pattern: default pattern recommended  
   
   - Exclude listfile from list: default and recommended setting is "On"  

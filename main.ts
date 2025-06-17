@@ -14,18 +14,20 @@ import {
 // Define the settings interface
 interface FolderListfileSettings {
   listFilePattern: string;
-  excludeExtensions: string[];
+  excludedExtensions: string[];
   excludeListFileFromList: boolean;
-  includedFolders: string[];
+	includedFolders: string[];
+	excludedFilenames: string[];
   debug: boolean;
 }
 
 // Default settings
 const DEFAULT_SETTINGS: FolderListfileSettings = {
   listFilePattern: "ndx-{foldername}.md",
-  excludeExtensions: ["css", "js", "json", "toml"],
+  excludedExtensions: ["css", "js", "json", "toml"],
   excludeListFileFromList: true,
-  includedFolders: [],
+	includedFolders: [],
+	excludedFilenames: ["LICENSE"],
   debug: false,
 };
 
@@ -326,9 +328,14 @@ export default class FolderListfilePlugin extends Plugin {
             return false;
           }
 
+					// Skip excludedFilenames
+					if (this.settings.excludedFilenames.includes(file.name)) {
+						return false;
+					}
+
           // Skip files with excluded extensions
           const extension = (file as TFile).extension.toLowerCase();
-          return !this.settings.excludeExtensions.includes(extension);
+          return !this.settings.excludedExtensions.includes(extension);
         });
 
       // Create content for the listfile
@@ -359,8 +366,9 @@ export default class FolderListfilePlugin extends Plugin {
       } and was last updated on ${new Date().toLocaleString()}*`;
 
       // Create or update the listfile
-      this.log(`Updating listfile at: ${folderPath}`);
-      const listFilePath = folderPath
+			this.log(`Updating listfile for: ${folderPath}`);
+
+			const listFilePath = folderPath
         ? `${folderPath}/${listFileName}`
         : listFileName;
 
@@ -413,9 +421,9 @@ class FolderListfileSettingTab extends PluginSettingTab {
       )
       .addText((text) =>
         text
-          .setValue(this.plugin.settings.excludeExtensions.join(", "))
+          .setValue(this.plugin.settings.excludedExtensions.join(", "))
           .onChange(async (value) => {
-            this.plugin.settings.excludeExtensions = value
+            this.plugin.settings.excludedExtensions = value
               .split(",")
               .map((ext) => ext.trim().toLowerCase());
             await this.plugin.saveSettings();
@@ -444,6 +452,28 @@ class FolderListfileSettingTab extends PluginSettingTab {
         textArea.inputEl.onblur = async (e: FocusEvent) => {
           const paths = (e.target as HTMLInputElement).value;
           this.plugin.settings.includedFolders = paths
+            .split("\n")
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0)
+            .map((item) => {
+              return item.endsWith("/") ? item.slice(0, -1) : item;
+            });
+          await this.plugin.saveSettings();
+        };
+      });
+
+    new Setting(containerEl)
+      .setName("Excluded filenames")
+      .setDesc(fragment)
+      .addTextArea((textArea) => {
+        textArea.inputEl.setAttr("rows", 6);
+        textArea
+          .setPlaceholder("LICENSE\n")
+          .setValue(this.plugin.settings.excludedFilenames.join("\n"));
+
+        textArea.inputEl.onblur = async (e: FocusEvent) => {
+          const paths = (e.target as HTMLInputElement).value;
+          this.plugin.settings.excludedFilenames = paths
             .split("\n")
             .map((item) => item.trim())
             .filter((item) => item.length > 0)
