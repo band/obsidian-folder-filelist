@@ -125,6 +125,8 @@ private log(message: string, ...args: unknown[]): void {
 4. **Path Normalization:** Handle root folder ("/") vs empty string consistently
 
 ## Workflow Rules
+- ALWAYS create a git branch before making changes
+- keep commits atomic and focused
 
 ### Development Workflow
 
